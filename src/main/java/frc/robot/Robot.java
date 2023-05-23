@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
@@ -41,8 +42,15 @@ public class Robot extends TimedRobot {
   private final Spark module3DriveMotor = new Spark(3);
   
 
-  private static final double turnEncoderRatio = (226233 / 3179); // Gear ratio for PG71 ~ 71
-  private static final double turnMaxRPM = 75;
+  private final double gearMotorRatio = (71); // Gear ratio for PG71 ~ 71
+  private final double tooth40GearRatio = 1/40;
+
+  private final double wheelDiameterMeters = Units.inchesToMeters(4); // Convert 4 inches to meters. 
+
+  private final double turnEncoderRatio = gearMotorRatio * tooth40GearRatio;
+  private final double clicks2Rotation = turnEncoderRatio / 4096; // 4096 clicks is registered as a rotation. 
+  private final double clicks2RotationPure = 1/71 * 1/40 * 1/4096;
+  private final double turnMaxRPM = 75;
 
 
   /**
@@ -55,7 +63,8 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     
     SmartDashboard.putData("Auto choices", m_chooser);
-    
+    System.out.println(clicks2RotationPure);
+
     module0DriveMotor.set(0);
     module1DriveMotor.set(0);
     module2DriveMotor.set(0);
@@ -66,6 +75,8 @@ public class Robot extends TimedRobot {
     module1TurnMotor.set(ControlMode.PercentOutput, 0);
     module2TurnMotor.set(ControlMode.PercentOutput, 0);
     module3TurnMotor.set(ControlMode.PercentOutput, 0);
+
+    module3TurnMotor.setSelectedSensorPosition(0, 0, 100);
   }
 
   /**
@@ -77,29 +88,29 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    module0DriveMotor.set(-xbox.getLeftY());
-    module1DriveMotor.set(-xbox.getLeftY());
-    module2DriveMotor.set(-xbox.getLeftY());
+    // module0DriveMotor.set(-xbox.getLeftY());
+    // module1DriveMotor.set(-xbox.getLeftY());
+    // module2DriveMotor.set(-xbox.getLeftY());
     module3DriveMotor.set(-xbox.getLeftY());
 
-    module0TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-    module1TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-    module2TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
+    // module0TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
+    // module1TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
+    // module2TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     module3TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
 
     SmartDashboard.putNumber("Mod 0 Quad/MagEnc", module0TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 0 Quad/MagEnc Rotation", module0TurnMotor.getSelectedSensorPosition(0) / (7 * turnEncoderRatio));
+    SmartDashboard.putNumber("Mod 0 Quad/MagEnc Rotation", module0TurnMotor.getSelectedSensorPosition(0));
    
    
     SmartDashboard.putNumber("Mod 1 Velocity", module1TurnMotor.getSelectedSensorVelocity(0));
     SmartDashboard.putNumber("Mod 1 Quad/MagEnc", module1TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 1 Quad/MagEnc Rotation", module1TurnMotor.getSelectedSensorPosition(0) / 4096);
+    SmartDashboard.putNumber("Mod 1 Quad/MagEnc Rotation", module1TurnMotor.getSelectedSensorPosition(0));
     
     SmartDashboard.putNumber("Mod 2 Quad/MagEnc", module2TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 2 Quad/MagEnc Rotation", module2TurnMotor.getSelectedSensorPosition(0) / 4096);
+    SmartDashboard.putNumber("Mod 2 Quad/MagEnc Rotation", module2TurnMotor.getSelectedSensorPosition(0));
 
     SmartDashboard.putNumber("Mod 3 Quad/MagEnc", module3TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 3 Quad/MagEnc Rotation", module3TurnMotor.getSelectedSensorPosition(0) / 4096);
+    SmartDashboard.putNumber("Mod 3 Quad/MagEnc Rotation", (module3TurnMotor.getSelectedSensorPosition(0) * (71 * 0.125)));
 
 
   }
