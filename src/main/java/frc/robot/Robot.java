@@ -44,10 +44,13 @@ public class Robot extends TimedRobot {
   
 
   private final double kClicks2RotationPure = 1656.66667; // 7 * 71 * (40/48) * 4;
+  private final double kRadians = 2 * Math.PI;
+  private final double kClicks2RotationRad = kClicks2RotationPure/kRadians; // 7 * 71 * (40/48) * 4;
+  
   // private final double turnMaxRPM = 75;
 
 
-  private final PIDController turnController = new PIDController(0.000602, 0, 0);
+  private final PIDController turnController = new PIDController(0.3373, 0, 0);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -89,18 +92,19 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    // frontDriveMotor.set(-xbox.getLeftY());
-    // module1DriveMotor.set(-xbox.getLeftY());
-    // module2DriveMotor.set(-xbox.getLeftY());
+    // frontDriveMotor.set(-xbox.getLeftY());    // module2DriveMotor.set(-xbox.getLeftY());
     // module3DriveMotor.set(-xbox.getLeftY());
 
     // module0TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     // module1TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     // module2TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     
-    frontLeftTurn.set(ControlMode.PercentOutput, xbox.getLeftX());
+    // frontLeftTurn.set(ControlMode.PercentOutput, xbox.getLeftX());
+    frontLeftDrive.set(-xbox.getLeftY());
+
+
     double leftTurnAmount = frontLeftTurn.getSelectedSensorPosition();
-    leftTurnAmount /= kClicks2RotationPure;
+    leftTurnAmount /= kClicks2RotationRad;
     SmartDashboard.putNumber("Front Left", leftTurnAmount);
     SmartDashboard.putData("PID Controller", turnController);
     
@@ -113,7 +117,19 @@ public class Robot extends TimedRobot {
     }
 
     if(xbox.getYButton()){
-      frontLeftTurn.set(ControlMode.PercentOutput, turnController.calculate(leftTurnAmount, leftTurnAmount));
+      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(0))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(0)));
+    }
+
+    if(xbox.getXButton()){
+      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(90))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(90)));
+    }
+
+    if(xbox.getBButton()){
+      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(-90))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(-90)));
+    }
+
+    if(xbox.getAButton()){
+      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(180))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(180)));
     }
 
   }
