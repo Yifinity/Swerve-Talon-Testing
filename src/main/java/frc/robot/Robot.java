@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.subsystems.SwerveModule;
+import frc.robot.subsystems.SwerveSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -28,108 +30,39 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private final XboxController xbox = new XboxController(3);
 
-  private final TalonSRX frontLeftTurn = new TalonSRX(1);
-  private final Spark frontLeftDrive = new Spark(1);
-
-  private final TalonSRX frontRightTurn = new TalonSRX(3);
-  private final Spark frontRightDrive = new Spark(3);
-    
-  private final TalonSRX backLeftTurn = new TalonSRX(2);
-  private final Spark backLeftDrive = new Spark(2);
-
-  private final TalonSRX backRightTurn = new TalonSRX(0);
-  private final Spark backRightDrive = new Spark(0);
-  
-
-  private final double kClicks2RotationPure = 1656.66667; // 7 * 71 * (40/48) * 4;
-  private final double kRadians = 2 * Math.PI;
-  private final double kClicks2RotationRad = kClicks2RotationPure/kRadians; // 7 * 71 * (40/48) * 4;
-  
-  // private final double turnMaxRPM = 75;
+  // Universal Variables. 
+  public static final XboxController xbox = new XboxController(3);
+  public static final SwerveSubsystem swerveSub = new SwerveSubsystem();
 
 
-  private final PIDController turnController = new PIDController(0.3373, 0, 0);
-
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
   @Override
   public void robotInit() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
-    
     SmartDashboard.putData("Auto choices", m_chooser);
-    // System.out.println(kclicks2RotationPure);
-
-    frontLeftDrive.set(0);
-    frontRightDrive.set(0);
-    backLeftDrive.set(0);
-    backRightDrive.set(0);
-
-    // module1TurnMotor.configClearPositionOnQuadIdx(true, 100);
-    frontLeftTurn.set(ControlMode.PercentOutput, 0);
-    frontRightTurn.set(ControlMode.PercentOutput, 0);
-    backLeftTurn.set(ControlMode.PercentOutput, 0);
-    backRightTurn.set(ControlMode.PercentOutput, 0);
-
-    frontLeftTurn.setSelectedSensorPosition(0, 0, 100);
-    frontRightTurn.setSelectedSensorPosition(0, 0, 100);
-    backLeftTurn.setSelectedSensorPosition(0, 0, 100);
-    backRightTurn.setSelectedSensorPosition(0, 0, 100);
-   
-    // frontLeftTurn.setConver
   }
 
-  /**
-   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
-   * that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
+
   @Override
   public void robotPeriodic() {
-    // frontDriveMotor.set(-xbox.getLeftY());    // module2DriveMotor.set(-xbox.getLeftY());
-    // module3DriveMotor.set(-xbox.getLeftY());
-
-    // module0TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-    // module1TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-    // module2TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     
-    // frontLeftTurn.set(ControlMode.PercentOutput, xbox.getLeftX());
-    frontLeftDrive.set(-xbox.getLeftY());
-
-
-    double leftTurnAmount = frontLeftTurn.getSelectedSensorPosition();
-    leftTurnAmount /= kClicks2RotationRad;
-    SmartDashboard.putNumber("Front Left", leftTurnAmount);
-    SmartDashboard.putData("PID Controller", turnController);
-    
-    
-    // SmartDashboard.putNumber("Mod 3 Quad/MagEnc Rotation", (module3TurnMotor.getSelectedSensorPosition(0) * (71 * 0.125)));
-
     // Reset Controller
     if(xbox.getLeftBumperPressed()){
-      frontLeftTurn.setSelectedSensorPosition(0, 0, 100);
+      // Reset Encoders
+      swerveSub.resetEncoders();
     }
 
     if(xbox.getYButton()){
-      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(0))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(0)));
+      swerveSub.goToPos(Units.degreesToRadians(0));      
     }
 
     if(xbox.getXButton()){
-      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(90))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(90)));
+      swerveSub.goToPos(Units.degreesToRadians(-90));      
     }
 
     if(xbox.getBButton()){
-      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(-90))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(-90)));
-    }
-
-    if(xbox.getAButton()){
-      frontLeftTurn.set(ControlMode.PercentOutput, Math.abs(turnController.calculate(leftTurnAmount, Units.degreesToRadians(180))) > 1 ? 1.0: turnController.calculate(leftTurnAmount, Units.degreesToRadians(180)));
+      swerveSub.goToPos(Units.degreesToRadians(90));      
     }
 
   }
