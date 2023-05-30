@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -29,29 +30,24 @@ public class Robot extends TimedRobot {
 
   private final XboxController xbox = new XboxController(3);
 
-  private final TalonSRX module0TurnMotor = new TalonSRX(0);
-  private final Spark module0DriveMotor = new Spark(0);
+  private final TalonSRX frontLeftTurn = new TalonSRX(1);
+  private final Spark frontLeftDrive = new Spark(1);
 
-  private final TalonSRX module1TurnMotor = new TalonSRX(1);
-  private final Spark module1DriveMotor = new Spark(1);
+  private final TalonSRX frontRightTurn = new TalonSRX(3);
+  private final Spark frontRightDrive = new Spark(3);
     
-  private final TalonSRX module2TurnMotor = new TalonSRX(2);
-  private final Spark module2DriveMotor = new Spark(2);
+  private final TalonSRX backLeftTurn = new TalonSRX(2);
+  private final Spark backLeftDrive = new Spark(2);
 
-  private final TalonSRX module3TurnMotor = new TalonSRX(3);
-  private final Spark module3DriveMotor = new Spark(3);
+  private final TalonSRX backRightTurn = new TalonSRX(0);
+  private final Spark backRightDrive = new Spark(0);
   
 
-  private final double gearMotorRatio = (71); // Gear ratio for PG71 ~ 71
-  private final double tooth40GearRatio = 1/40;
+  private final double kClicks2RotationPure = 1656.66667; // 7 * 71 * (40/48) * 4;
+  // private final double turnMaxRPM = 75;
 
-  private final double wheelDiameterMeters = Units.inchesToMeters(4); // Convert 4 inches to meters. 
 
-  private final double turnEncoderRatio = gearMotorRatio * tooth40GearRatio;
-  private final double clicks2Rotation = turnEncoderRatio / 4096; // 4096 clicks is registered as a rotation. 
-  private final double clicks2RotationPure = 1/71 * 1/40 * 1/4096;
-  private final double turnMaxRPM = 75;
-
+  private final PIDController turnController = new PIDController(0.000602, 0, 0);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -63,20 +59,25 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     
     SmartDashboard.putData("Auto choices", m_chooser);
-    System.out.println(clicks2RotationPure);
+    // System.out.println(kclicks2RotationPure);
 
-    module0DriveMotor.set(0);
-    module1DriveMotor.set(0);
-    module2DriveMotor.set(0);
-    module3DriveMotor.set(0);
+    frontLeftDrive.set(0);
+    frontRightDrive.set(0);
+    backLeftDrive.set(0);
+    backRightDrive.set(0);
 
     // module1TurnMotor.configClearPositionOnQuadIdx(true, 100);
-    module0TurnMotor.set(ControlMode.PercentOutput, 0);
-    module1TurnMotor.set(ControlMode.PercentOutput, 0);
-    module2TurnMotor.set(ControlMode.PercentOutput, 0);
-    module3TurnMotor.set(ControlMode.PercentOutput, 0);
+    frontLeftTurn.set(ControlMode.PercentOutput, 0);
+    frontRightTurn.set(ControlMode.PercentOutput, 0);
+    backLeftTurn.set(ControlMode.PercentOutput, 0);
+    backRightTurn.set(ControlMode.PercentOutput, 0);
 
-    module3TurnMotor.setSelectedSensorPosition(0, 0, 100);
+    frontLeftTurn.setSelectedSensorPosition(0, 0, 100);
+    frontRightTurn.setSelectedSensorPosition(0, 0, 100);
+    backLeftTurn.setSelectedSensorPosition(0, 0, 100);
+    backRightTurn.setSelectedSensorPosition(0, 0, 100);
+   
+    // frontLeftTurn.setConver
   }
 
   /**
@@ -88,30 +89,32 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    // module0DriveMotor.set(-xbox.getLeftY());
+    // frontDriveMotor.set(-xbox.getLeftY());
     // module1DriveMotor.set(-xbox.getLeftY());
     // module2DriveMotor.set(-xbox.getLeftY());
-    module3DriveMotor.set(-xbox.getLeftY());
+    // module3DriveMotor.set(-xbox.getLeftY());
 
     // module0TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     // module1TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
     // module2TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-    module3TurnMotor.set(ControlMode.PercentOutput, xbox.getLeftX());
-
-    SmartDashboard.putNumber("Mod 0 Quad/MagEnc", module0TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 0 Quad/MagEnc Rotation", module0TurnMotor.getSelectedSensorPosition(0));
-   
-   
-    SmartDashboard.putNumber("Mod 1 Velocity", module1TurnMotor.getSelectedSensorVelocity(0));
-    SmartDashboard.putNumber("Mod 1 Quad/MagEnc", module1TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 1 Quad/MagEnc Rotation", module1TurnMotor.getSelectedSensorPosition(0));
     
-    SmartDashboard.putNumber("Mod 2 Quad/MagEnc", module2TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 2 Quad/MagEnc Rotation", module2TurnMotor.getSelectedSensorPosition(0));
+    frontLeftTurn.set(ControlMode.PercentOutput, xbox.getLeftX());
+    double leftTurnAmount = frontLeftTurn.getSelectedSensorPosition();
+    leftTurnAmount /= kClicks2RotationPure;
+    SmartDashboard.putNumber("Front Left", leftTurnAmount);
+    SmartDashboard.putData("PID Controller", turnController);
+    
+    
+    // SmartDashboard.putNumber("Mod 3 Quad/MagEnc Rotation", (module3TurnMotor.getSelectedSensorPosition(0) * (71 * 0.125)));
 
-    SmartDashboard.putNumber("Mod 3 Quad/MagEnc", module3TurnMotor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Mod 3 Quad/MagEnc Rotation", (module3TurnMotor.getSelectedSensorPosition(0) * (71 * 0.125)));
+    // Reset Controller
+    if(xbox.getLeftBumperPressed()){
+      frontLeftTurn.setSelectedSensorPosition(0, 0, 100);
+    }
 
+    if(xbox.getYButton()){
+      frontLeftTurn.set(ControlMode.PercentOutput, turnController.calculate(leftTurnAmount, leftTurnAmount));
+    }
 
   }
 
